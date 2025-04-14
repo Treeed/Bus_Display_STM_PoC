@@ -243,9 +243,9 @@ int main(void)
       }
 
 
-//      adress99[(cnt%160)+7] = cnt/160 ? 0xFF : 0x0;
+      adress99[(cnt%160)+7] = cnt/160 ? 0xFF : 0x0;
       HAL_UART_Transmit_IT(&huart1, adress99, sizeof(adress99));
-//      cnt = (cnt+1)%320;
+      cnt = (cnt+1)%320;
 
       HAL_Delay(25);
     }
