@@ -59,7 +59,7 @@ static void MX_USART1_UART_Init(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 void delay100(){
-  for(int i = 0; i<20000; i++);
+  for(int i = 0; i<1000; i++);
 }
 
 volatile uint8_t rdata[50] = {};
@@ -68,24 +68,15 @@ uint8_t zeros[50] = {};
 
 
 bool send_deviate_expect(UART_HandleTypeDef *huart, const uint8_t *pData, uint16_t Size, const uint8_t *expected_data, uint16_t expectedSize, uint32_t Timeout){
-  HAL_UART_AbortReceive_IT(&huart1);
   memset(rdata, 0, 50);
   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_8, 1);
-  HAL_UART_Receive_IT(&huart1, rdata, 50);
-//  delay100();
-//  if (memcmp(rdata, zeros, Size)){
-//    asm("nop");
-//  }
-  delay100();
-  HAL_UART_Transmit(huart, pData, Size, Timeout);
-  delay100();
+  asm volatile ("" : : "r" (*(unsigned int *) huart->Instance->SR));
+  asm volatile ("" : : "r" (*(unsigned int *) huart->Instance->DR));
+  HAL_UART_Receive_IT(&huart1, rdata, expectedSize);
+  HAL_UART_Transmit_IT(huart, pData, Size);
+  for(int i = 0; i<Timeout; i++);
   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_8, 0);
-  for(int i = 0; i<(50-expectedSize); i++){
-    if(!memcmp(rdata+i, expected_data, expectedSize)){
-      return true;
-    }
-  }
-  return false;
+  return !memcmp(rdata, expected_data, expectedSize);
 }
 bool send_thing(UART_HandleTypeDef *huart, const uint8_t *pData, uint16_t Size, uint32_t Timeout){
   send_deviate_expect(huart,pData, Size, pData, Size, Timeout);
@@ -128,70 +119,94 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+  uint32_t cnt = 0;
+  uint8_t adress99[167] = {0x1, 0x0, 0,  0,  0,  0x6, 0xA0,
+      0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55,
+      0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55,
+      0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55,
+      0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55,
+      0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55,
+      0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55,
+      0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55,
+      0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55,
+      0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55,
+      0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55,
+      0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55,
+      0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55,
+      0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55,
+      0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55,
+      0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55,
+      0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55,
+  };
   while (1)
   {
     uint8_t pane_addresses[] = {0x03, 0x07};
     int rx_ok = 1;
     uint8_t address1[] = {0xFE, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x01};
     uint8_t address111[] = {0xFE, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x09};
-    if(!send_deviate_expect(&huart1, address1, sizeof(address1), address111, sizeof(address111), HAL_MAX_DELAY)) {
+    if(!send_deviate_expect(&huart1, address1, sizeof(address1), address111, sizeof(address111), 20000)) {
       HAL_Delay(100);
       continue;
     }
     delay100();
 
     uint8_t address2[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x0E, 0x01, 0xC8};
-    if(!send_thing(&huart1, address2, sizeof(address2), HAL_MAX_DELAY)) continue;
+    if(!send_thing(&huart1, address2, sizeof(address2), 1000)) continue;
     delay100();
     uint8_t address4[] = {0x01, 0x00, 0x00, 0x00, 0x00, 0x14, 0x00};
-    if(!send_thing(&huart1, address4, sizeof(address4), HAL_MAX_DELAY)) continue;
+    if(!send_thing(&huart1, address4, sizeof(address4), 1000)) continue;
     delay100();
     uint8_t address3[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x02, 0x00};
-    if(!send_thing(&huart1, address3, sizeof(address3), HAL_MAX_DELAY)){
+    if(!send_thing(&huart1, address3, sizeof(address3), 1000)){
       continue;
     }
 
     HAL_Delay(5);
 
     uint8_t address9[] = {0x01, 0x00, 0x00, 0x00, 0x00, 0x30, 0x02, 0x00, 0x00};
-    if(!send_thing(&huart1, address9, sizeof(address9), HAL_MAX_DELAY)) continue;
+    if(!send_thing(&huart1, address9, sizeof(address9), 1000)) continue;
 
     HAL_Delay(5);
     uint8_t address5[] = {0x01, 0x00, 0x00, 0x00, 0x00, 0x10, 0x00};
-    if(!send_thing(&huart1, address5, sizeof(address5), HAL_MAX_DELAY)) continue;
+    if(!send_thing(&huart1, address5, sizeof(address5), 1000)) continue;
 
     HAL_Delay(5);
     uint8_t address6[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x0A, 0x01, 0x03};
-    if(!send_thing(&huart1, address6, sizeof(address6), HAL_MAX_DELAY)) continue;
+    if(!send_thing(&huart1, address6, sizeof(address6), 1000)) continue;
 
     HAL_Delay(3);
     uint8_t address7[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x16, 0x01, 0x01};
-    if(!send_thing(&huart1, address7, sizeof(address7), HAL_MAX_DELAY)) continue;
+    if(!send_thing(&huart1, address7, sizeof(address7), 1000)) continue;
 
     HAL_Delay(14);
     uint8_t address8[] = {0x01, 0x00, 0x00, 0x00, 0x00, 0x30, 0x02, 0x00, 0x01};
-    if(!send_thing(&huart1, address8, sizeof(address8), HAL_MAX_DELAY)) continue;
+    if(!send_thing(&huart1, address8, sizeof(address8), 1000)) continue;
+    HAL_Delay(1);
 
     uint8_t addresses[]  = {0x6, 0x9, 0xC, 0xE, 0x10, 0x12, 0x14, 0x16, 0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F, 0x20, 0x21, 0x22};
 
     for(int addr = 0; addr < sizeof(addresses); addr++){
-      if(!send_thing(&huart1, address3, sizeof(address3), HAL_MAX_DELAY)){
+      if(!send_thing(&huart1, address3, sizeof(address3), 1000)){
         rx_ok = 0;
         break;
       }
       address6[7] = addresses[addr];
       delay100();
-      if(!send_thing(&huart1, address6, sizeof(address6), HAL_MAX_DELAY)){
+      if(!send_thing(&huart1, address6, sizeof(address6), 1000)){
         rx_ok = 0;
         break;
       }
       delay100();
-      if(!send_thing(&huart1, address5, sizeof(address5), HAL_MAX_DELAY)){
+      if(!send_thing(&huart1, address5, sizeof(address5), 1000)){
         rx_ok = 0;
         break;
       }
       delay100();
-      if(!send_thing(&huart1, address7, sizeof(address7), HAL_MAX_DELAY)){
+      delay100();
+      delay100();
+      delay100();
+      delay100();
+      if(!send_thing(&huart1, address7, sizeof(address7), 1000)){
         rx_ok = 0;
         break;
       }
@@ -203,45 +218,34 @@ int main(void)
 
 
     while(1){
-      if(!send_thing(&huart1, address3, sizeof(address3), HAL_MAX_DELAY)){
+      if(!send_thing(&huart1, address3, sizeof(address3), 1000)){
         rx_ok = 0;
         break;
       }
       delay100();
-      if(!send_thing(&huart1, address6, sizeof(address6), HAL_MAX_DELAY)){
+      if(!send_thing(&huart1, address6, sizeof(address6), 1000)){
         rx_ok = 0;
         break;
       }
       delay100();
-      if(!send_thing(&huart1, address5, sizeof(address5), HAL_MAX_DELAY)){
+      if(!send_thing(&huart1, address5, sizeof(address5), 1000)){
         rx_ok = 0;
         break;
       }
       delay100();
-      if(!send_thing(&huart1, address7, sizeof(address7), HAL_MAX_DELAY)){
+      delay100();
+      delay100();
+      delay100();
+      delay100();
+      if(!send_thing(&huart1, address7, sizeof(address7), 1000)){
         rx_ok = 0;
         break;
       }
 
-      uint8_t adress9[] = {0x1, 0x0, 0,  0,  0,  0x6, 0xA0,
-      0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55,
-      0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55,
-      0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55,
-      0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55,
-      0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55,
-      0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55,
-      0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55,
-      0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55,
-      0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55,
-      0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55,
-      0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55,
-      0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55,
-      0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55,
-      0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55,
-      0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55,
-      0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55,
-      };
-      HAL_UART_Transmit(&huart1, adress9, sizeof(address9), HAL_MAX_DELAY);
+
+//      adress99[(cnt%160)+7] = cnt/160 ? 0xFF : 0x0;
+      HAL_UART_Transmit_IT(&huart1, adress99, sizeof(adress99));
+//      cnt = (cnt+1)%320;
 
       HAL_Delay(25);
     }
@@ -278,12 +282,11 @@ void SystemClock_Config(void)
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
-  RCC_OscInitStruct.HSIState = RCC_HSI_ON;
-  RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
+  RCC_OscInitStruct.HSEState = RCC_HSE_BYPASS;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
-  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
-  RCC_OscInitStruct.PLL.PLLM = 8;
+  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
+  RCC_OscInitStruct.PLL.PLLM = 4;
   RCC_OscInitStruct.PLL.PLLN = 180;
   RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
   RCC_OscInitStruct.PLL.PLLQ = 2;
@@ -331,7 +334,7 @@ static void MX_USART1_UART_Init(void)
 
   /* USER CODE END USART1_Init 1 */
   huart1.Instance = USART1;
-  huart1.Init.BaudRate = 1969936;
+  huart1.Init.BaudRate = 2000000;
   huart1.Init.WordLength = UART_WORDLENGTH_8B;
   huart1.Init.StopBits = UART_STOPBITS_1;
   huart1.Init.Parity = UART_PARITY_NONE;
