@@ -119,7 +119,7 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  uint8_t disp = 0x2;
+  uint8_t disp = 0x1;
   uint32_t cnt = 0;
   uint8_t adress99[167] = {disp, 0x0, 0,  0,  0,  0x6, 0xA0,
       0, 0, 0, 0, 0, 0, 126, 16, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -132,129 +132,43 @@ int main(void)
       0, 0, 0, 0, 0, 15, 27, 128, 0, 0, 0, 0, 0, 1, 248, 16,
       0, 0, 0, 0, 0, 124, 7, 0, 0, 0, 0, 0, 0, 3, 254, 0,
       0, 0, 0, 0, 7, 224, 0, 0, 0, 0, 0, 0, 0, 15, 251, 0,
-
-
   };
+  uint8_t address1[] = {0xFE, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x01};
+  uint8_t address111[] = {0xFE, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x09};
+  uint8_t address2[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x0E, 0x01, 0xC8};
+  uint8_t address4[] = {disp, 0x00, 0x00, 0x00, 0x00, 0x14, 0x00};
+  uint8_t address3[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x02, 0x00};
+  uint8_t address9[] = {disp, 0x00, 0x00, 0x00, 0x00, 0x30, 0x02, 0x00, 0x00};
+  uint8_t address5[] = {disp, 0x00, 0x00, 0x00, 0x00, 0x10, 0x00};
+  uint8_t address6[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x0A, 0x01, 0x03};
+  uint8_t address7[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x16, 0x01, 0x01};
+  uint8_t address8[] = {disp, 0x00, 0x00, 0x00, 0x00, 0x30, 0x02, 0x00, 0x01};
+  uint8_t addresses[]  = {0x6, 0x9, 0xC, 0xE, 0x10, 0x12, 0x14, 0x16, 0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F, 0x20, 0x21, 0x22};
   while (1)
   {
-    uint8_t pane_addresses[] = {0x03, 0x07};
     int rx_ok = 1;
-    uint8_t address1[] = {0xFE, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x01};
-    uint8_t address111[] = {0xFE, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x09};
     if(!send_deviate_expect(&huart1, address1, sizeof(address1), address111, sizeof(address111), 20000)) {
       HAL_Delay(100);
       continue;
     }
     delay100();
 
-    uint8_t address2[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x0E, 0x01, 0xC8};
-    if(!send_thing(&huart1, address2, sizeof(address2), 1000)) continue;
-    delay100();
-    uint8_t address4[] = {disp, 0x00, 0x00, 0x00, 0x00, 0x14, 0x00};
-    if(!send_thing(&huart1, address4, sizeof(address4), 1000)) continue;
-    delay100();
-    uint8_t address3[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x02, 0x00};
-    if(!send_thing(&huart1, address3, sizeof(address3), 1000)){
-      continue;
-    }
-
-    HAL_Delay(5);
-
-    uint8_t address9[] = {disp, 0x00, 0x00, 0x00, 0x00, 0x30, 0x02, 0x00, 0x00};
-    if(!send_thing(&huart1, address9, sizeof(address9), 1000)) continue;
-
-    HAL_Delay(5);
-    uint8_t address5[] = {disp, 0x00, 0x00, 0x00, 0x00, 0x10, 0x00};
-    if(!send_thing(&huart1, address5, sizeof(address5), 1000)) continue;
-
-    HAL_Delay(5);
-    uint8_t address6[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x0A, 0x01, 0x03};
-    if(!send_thing(&huart1, address6, sizeof(address6), 1000)) continue;
-
-    HAL_Delay(3);
-    uint8_t address7[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x16, 0x01, 0x01};
-    if(!send_thing(&huart1, address7, sizeof(address7), 1000)) continue;
-
-    HAL_Delay(14);
-    uint8_t address8[] = {disp, 0x00, 0x00, 0x00, 0x00, 0x30, 0x02, 0x00, 0x01};
-    if(!send_thing(&huart1, address8, sizeof(address8), 1000)) continue;
-    HAL_Delay(1);
-
-    uint8_t addresses[]  = {0x6, 0x9, 0xC, 0xE, 0x10, 0x12, 0x14, 0x16, 0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F, 0x20, 0x21, 0x22};
-
-    for(int addr = 0; addr < sizeof(addresses); addr++){
-      if(!send_thing(&huart1, address3, sizeof(address3), 1000)){
-        rx_ok = 0;
-        break;
-      }
-      address6[7] = addresses[addr];
-      delay100();
-      if(!send_thing(&huart1, address6, sizeof(address6), 1000)){
-        rx_ok = 0;
-        break;
-      }
-      delay100();
-      if(!send_thing(&huart1, address5, sizeof(address5), 1000)){
-        rx_ok = 0;
-        break;
-      }
-      delay100();
-      delay100();
-      delay100();
-      delay100();
-      delay100();
-      if(!send_thing(&huart1, address7, sizeof(address7), 1000)){
-        rx_ok = 0;
-        break;
-      }
-      HAL_Delay(25);
-    }
-    if(!rx_ok){
-      continue;
-    }
-
-
     while(1){
-      if(!send_thing(&huart1, address3, sizeof(address3), 1000)){
-        rx_ok = 0;
-        break;
-      }
-      delay100();
+      address6[7] = 0x22;
       if(!send_thing(&huart1, address6, sizeof(address6), 1000)){
         rx_ok = 0;
         break;
       }
-      delay100();
-      if(!send_thing(&huart1, address5, sizeof(address5), 1000)){
-        rx_ok = 0;
-        break;
-      }
-      delay100();
-      delay100();
-      delay100();
-      delay100();
-      delay100();
-      if(!send_thing(&huart1, address7, sizeof(address7), 1000)){
+      if(!send_thing(&huart1, address3, sizeof(address3), 1000)){
         rx_ok = 0;
         break;
       }
 
-
-//      adress99[(cnt%160)+7] = cnt/160 ? 0xFF : 0x0;
       HAL_UART_Transmit_IT(&huart1, adress99, sizeof(adress99));
-//      cnt = (cnt+1)%320;
 
-      HAL_Delay(25);
+      HAL_Delay(10);
     }
 
-//    while(1){
-//
-//      for(int pane = 0; pane < sizeof(pane_addresses); pane++){
-//
-//
-//        HAL_Delay(1);
-//      }
-//    }
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
