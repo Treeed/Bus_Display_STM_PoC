@@ -81,6 +81,12 @@ bool send_deviate_expect(UART_HandleTypeDef *huart, const uint8_t *pData, uint16
 bool send_thing(UART_HandleTypeDef *huart, const uint8_t *pData, uint16_t Size, uint32_t Timeout){
   send_deviate_expect(huart,pData, Size, pData, Size, Timeout);
 }
+unsigned char reverse(unsigned char b) {
+   b = (b & 0xF0) >> 4 | (b & 0x0F) << 4;
+   b = (b & 0xCC) >> 2 | (b & 0x33) << 2;
+   b = (b & 0xAA) >> 1 | (b & 0x55) << 1;
+   return b;
+}
 /* USER CODE END 0 */
 
 /**
@@ -119,19 +125,11 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+  uint8_t images[] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,127,255,248,0,119,255,255,255,255,240,0,56,0,0,255,64,0,15,255,252,0,0,255,128,24,252,110,0,255,128,64,0,0,0,0,1,255,0,127,8,135,35,255,128,0,68,240,31,255,255,255,0,0,1,136,129,32,0,0,63,101,159,224,0,0,0,0,0,0,200,145,32,0,1,224,37,16,0,0,8,0,0,0,0,104,145,35,0,63,0,37,3,192,0,0,0,0,0,0,40,145,49,255,192,0,37,126,255,128,0,0,0,0,0,56,145,17,0,1,254,37,64,64,127,255,224,0,0,0,28,145,17,28,255,2,37,64,0,0,1,252,0,0,0,28,147,16,151,0,2,37,64,0,0,62,3,192,0,15,76,146,16,144,0,2,37,66,255,255,224,0,126,1,249,76,146,16,144,1,194,41,71,128,0,0,0,3,255,1,76,146,16,160,6,50,41,68,0,248,0,0,0,0,1,76,146,16,161,248,18,41,68,255,143,255,240,0,0,1,84,146,16,161,0,26,41,71,128,0,0,0,0,0,1,84,146,8,161,0,25,41,64,0,0,0,0,0,0,1,20,147,8,161,0,97,42,64,0,24,0,0,0,0,1,20,145,8,161,0,193,106,64,15,216,0,7,224,0,1,20,161,8,160,129,129,75,127,248,127,0,24,63,0,7,20,161,8,160,131,1,77,96,0,1,255,240,0,255,252,36,161,8,160,198,3,69,223,248,128,0,0,0,0,0,36,163,8,160,120,126,68,112,15,128,0,0,0,0,0,36,162,24,144,31,192,84,0,0,255,192,0,0,0,0,36,178,16,159,224,0,36,0,0,0,63,254,0,0,0,36,146,16,128,0,0,52,0,7,255,224,112,0,0,0,36,146,48,128,3,255,39,255,248,0,63,255,255,255,255,228,146,33,255,252,0,96,0,0,0,192,0,0,0,0,4,146,96,0,0,0,64,7,255,255,188,0,0,0,0,4,147,64,0,0,15,127,252,0,0,3,255,252,7,255,228,255,127,255,255,248,0,0,0,0,0,0,3,248,0,28,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,};
+  uint8_t num_frames = sizeof(images)/15/40;
   uint8_t disp = 0x1;
   uint32_t cnt = 0;
   uint8_t adress99[167] = {disp, 0x0, 0,  0,  0,  0x6, 0xA0,
-      0, 0, 0, 0, 0, 0, 126, 16, 0, 0, 0, 0, 0, 0, 0, 0,
-      0, 0, 0, 0, 0, 0, 188, 49, 192, 0, 0, 0, 0, 0, 0, 0,
-      0, 0, 0, 0, 0, 0, 124, 115, 128, 0, 0, 0, 0, 0, 1, 0,
-      0, 0, 0, 0, 0, 1, 189, 255, 0, 0, 0, 0, 0, 0, 7, 0,
-      0, 0, 0, 0, 0, 0, 127, 252, 0, 0, 0, 0, 0, 0, 14, 64,
-      0, 0, 0, 0, 0, 0, 127, 240, 0, 0, 0, 0, 0, 0, 60, 0,
-      0, 0, 0, 0, 0, 1, 231, 224, 0, 0, 0, 0, 0, 0, 112, 0,
-      0, 0, 0, 0, 0, 15, 27, 128, 0, 0, 0, 0, 0, 1, 248, 16,
-      0, 0, 0, 0, 0, 124, 7, 0, 0, 0, 0, 0, 0, 3, 254, 0,
-      0, 0, 0, 0, 7, 224, 0, 0, 0, 0, 0, 0, 0, 15, 251, 0,
   };
   uint8_t address1[] = {0xFE, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x01};
   uint8_t address111[] = {0xFE, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x09};
@@ -144,6 +142,7 @@ int main(void)
   uint8_t address7[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x16, 0x01, 0x01};
   uint8_t address8[] = {disp, 0x00, 0x00, 0x00, 0x00, 0x30, 0x02, 0x00, 0x01};
   uint8_t addresses[]  = {0x6, 0x9, 0xC, 0xE, 0x10, 0x12, 0x14, 0x16, 0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F, 0x20, 0x21, 0x22};
+  uint32_t last_frame = 0;
   while (1)
   {
     int rx_ok = 1;
@@ -154,6 +153,11 @@ int main(void)
     delay100();
 
     while(1){
+      if(HAL_GetTick()-last_frame > 150){
+        cnt = (cnt+1)%num_frames;
+        last_frame = HAL_GetTick();
+      }
+
       address6[7] = 0x22;
       if(!send_thing(&huart1, address6, sizeof(address6), 1000)){
         rx_ok = 0;
@@ -163,10 +167,45 @@ int main(void)
         rx_ok = 0;
         break;
       }
+      uint8_t* framestart = images+cnt*40*15;
+      for(int panvert=0; panvert<2; panvert++){
+        for(int line=0;line<10;line++) {
+          for (int col = 0; col < 7; col++) {
+            adress99[7+line*16+1+8+6-col] = reverse(framestart[(line+panvert*20)*15+col]);
+          }
+          adress99[7+line*16+1+7] = reverse((framestart[(line+panvert*20)*15+7]&0b11110000) | framestart[(line+10+panvert*20)*15]>>4);
+        }
 
-      HAL_UART_Transmit_IT(&huart1, adress99, sizeof(adress99));
+        for(int line=0;line<10;line++) {
+          for (int col = 0; col < 7; col++) {
+            adress99[7+line*16+1+6-col] = reverse(framestart[(line+10+panvert*20)*15+col]<<4 | framestart[(line+10+panvert*20)*15+col+1]>>4);
+          }
+        }
+        adress99[0] = (panvert*2)+1;
+        HAL_UART_Transmit_IT(&huart1, adress99, sizeof(adress99));
+        HAL_Delay(1);
+      }
+      memset(adress99+7, 0, 160);
 
-      HAL_Delay(10);
+      for(int panvert=0; panvert<2; panvert++){
+        for(int line=0;line<10;line++) {
+          for (int col = 0; col < 7; col++) {
+            adress99[7+line*16+1+8+6-col] = reverse(framestart[(line+panvert*20)*15+col+7]<<4 | framestart[(line+panvert*20)*15+col+8]>>4);
+          }
+          adress99[7+line*16+1+7] = reverse((framestart[(line+panvert*20)*15+14]<<4) | (framestart[(line+10+panvert*20)*15+7]&0b1111));
+        }
+
+        for(int line=0;line<10;line++) {
+          for (int col = 0; col < 7; col++) {
+            adress99[7+line*16+1+6-col] = reverse(framestart[(line+10+panvert*20)*15+col+8]);
+          }
+        }
+        adress99[0] = (panvert*2)+2;
+        HAL_UART_Transmit_IT(&huart1, adress99, sizeof(adress99));
+        HAL_Delay(1);
+      }
+
+      HAL_Delay(40);
     }
 
     /* USER CODE END WHILE */
